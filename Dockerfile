@@ -1,36 +1,39 @@
-# Use an official Node.js runtime as a parent image
+
+# Use official Node.js image
 FROM node:18-alpine
 
-# Set the working directory to /app
+# Set working directory
 WORKDIR /app
 
-# Install PNPM
-RUN npm install -g pnpm
+# Copy package files
+COPY package.json package-lock.json ./
 
-# Copy package.json and pnpm-lock.yaml to the working directory (backend)
-COPY package.json pnpm-lock.yaml ./
-# Install backend dependencies.
-RUN pnpm install
-# Copy backend directory.
+# Install backend dependencies
+RUN npm install
+
+# Copy backend source
 COPY backend/ ./backend
 
-# Copy frontend folder over to temporary `frontendsources` folder.
+# Copy frontend source
 COPY frontend/ ./frontendsources
+
 # Install frontend dependencies
-RUN pnpm -C frontendsources install
-# Build the frontend (vite react app)
-RUN npm install -g typescript
-RUN pnpm -C frontendsources build
-# Create a frontend directory in the working path.
+RUN npm --prefix frontendsources install
+
+# Build frontend
+RUN npm --prefix frontendsources run build
+
+# Create frontend folder
 RUN mkdir frontend
-# Copy only the built files to the /frontend directory
+
+# Copy built frontend files
 RUN cp -r ./frontendsources/dist ./frontend
 
-# Get rid of frontendsources as it was only used for building.
+# Remove temporary frontend source folder
 RUN rm -rf ./frontendsources
 
-# Expose port :8000
+# Expose backend port
 EXPOSE 8000
 
-# Run the server.
-CMD [ "npm", "start" ]
+# Start server
+CMD ["npm", "start"]

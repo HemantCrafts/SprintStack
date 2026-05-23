@@ -28,8 +28,8 @@ RUN npm --prefix frontendsources run build
 
 # # Copy built frontend files
 # RUN cp -r ./frontendsources/dist ./frontend
-RUN mkdir -p backend/frontend
-RUN cp -r ./frontendsources/dist ./backend/frontend
+RUN mkdir -p frontend/dist
+RUN cp -r ./frontendsources/dist/* ./frontend/dist
 
 # Remove temporary frontend source folder
 RUN rm -rf ./frontendsources

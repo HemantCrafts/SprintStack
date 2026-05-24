@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils"
 import { Link } from "react-router-dom"
 import { RegisterForm } from '@components/forms/RegisterForm';
 import AuthSideHalf from "@components/AuthSideHalf";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 function TermsAndPrivacy() {
     return (
@@ -36,16 +37,16 @@ export default function UserRegistrationPage() {
 
     return (
         <>
-            <div className="container relative grid h-screen flex-col items-center justify-center grid-cols-1 lg:max-w-none lg:grid-cols-2 lg:px-0">
-                <Link
-                    to="/login"
-                    className={cn(
-                        buttonVariants({ variant: "ghost" }),
-                        "absolute right-4 top-4 md:right-8 md:top-8"
-                    )}
-                >
-                    Login
-                </Link>
+            <div className="container relative grid h-screen flex-col items-center justify-center grid-cols-1 lg:max-w-none lg:grid-cols-2 lg:px-0 bg-background">
+                <div className="absolute right-4 top-4 md:right-8 md:top-8 flex items-center gap-2">
+                    <ThemeToggle />
+                    <Link
+                        to="/login"
+                        className={cn(buttonVariants({ variant: "ghost" }))}
+                    >
+                        Login
+                    </Link>
+                </div>
                 <AuthSideHalf />
                 <div className="lg:p-8">
                     <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">

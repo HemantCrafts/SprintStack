@@ -1,7 +1,7 @@
 export const MainContent = () => {
     return (
-      <section className="w-full bg-white pt-7 pb-7 md:pt-20 md:pb-24">
-          <div className="box-border flex flex-col items-center content-center px-8 mx-auto leading-6 text-black border-0 border-gray-300 border-solid md:flex-row max-w-7xl lg:px-16">
+      <section className="w-full bg-background pt-7 pb-7 md:pt-20 md:pb-24">
+          <div className="box-border flex flex-col items-center content-center px-8 mx-auto leading-6 text-foreground border-0 border-border border-solid md:flex-row max-w-7xl lg:px-16">
             {/* Image */}
             <div className="box-border relative w-full max-w-md px-4 mt-5 mb-4 -ml-5 text-center bg-no-repeat bg-contain border-solid md:ml-0 md:mt-0 md:max-w-none lg:mb-0 md:w-1/2 xl:pl-10">
               <img alt="image"
@@ -10,28 +10,28 @@ export const MainContent = () => {
               />
             </div>
             {/* Content */}
-            <div className="box-border order-first w-full text-black border-solid md:w-1/2 md:pl-10 md:order-none">
-              <h2 className="m-0 text-xl font-semibold leading-tight border-0 border-gray-300 lg:text-3xl md:text-2xl">
+            <div className="box-border order-first w-full text-foreground border-solid md:w-1/2 md:pl-10 md:order-none">
+              <h2 className="m-0 text-xl font-semibold leading-tight border-0 border-border lg:text-3xl md:text-2xl">
                 Features to help you succeed
               </h2>
-              <p className="pt-4 pb-8 m-0 leading-7 text-gray-700 border-0 border-gray-300 sm:pr-12 xl:pr-32 lg:text-lg">
+              <p className="pt-4 pb-8 m-0 leading-7 text-muted-foreground border-0 border-border sm:pr-12 xl:pr-32 lg:text-lg">
                 Build an atmosphere that creates productivity in your organization and
                 your company culture.
               </p>
-              <ul className="p-0 m-0 leading-6 border-0 border-gray-300">
-                <li className="box-border relative py-1 pl-0 text-left text-gray-500 border-solid">
+              <ul className="p-0 m-0 leading-6 border-0 border-border">
+                <li className="box-border relative py-1 pl-0 text-left text-muted-foreground border-solid">
                   <span className="inline-flex items-center justify-center w-6 h-6 mr-2 text-white bg-yellow-300 rounded-full">
                     <span className="text-sm font-bold">✓</span>
                   </span>{" "}
                   Maximize productivity and growth
                 </li>
-                <li className="box-border relative py-1 pl-0 text-left text-gray-500 border-solid">
+                <li className="box-border relative py-1 pl-0 text-left text-muted-foreground border-solid">
                   <span className="inline-flex items-center justify-center w-6 h-6 mr-2 text-white bg-yellow-300 rounded-full">
                     <span className="text-sm font-bold">✓</span>
                   </span>{" "}
                   Speed past your competition
                 </li>
-                <li className="box-border relative py-1 pl-0 text-left text-gray-500 border-solid">
+                <li className="box-border relative py-1 pl-0 text-left text-muted-foreground border-solid">
                   <span className="inline-flex items-center justify-center w-6 h-6 mr-2 text-white bg-yellow-300 rounded-full">
                     <span className="text-sm font-bold">✓</span>
                   </span>{" "}
@@ -41,30 +41,30 @@ export const MainContent = () => {
             </div>
             {/* End  Content */}
           </div>
-          <div className="box-border flex flex-col items-center content-center px-8 mx-auto mt-2 leading-6 text-black border-0 border-gray-300 border-solid md:mt-20 xl:mt-0 md:flex-row max-w-7xl lg:px-16">
+          <div className="box-border flex flex-col items-center content-center px-8 mx-auto mt-2 leading-6 text-foreground border-0 border-border border-solid md:mt-20 xl:mt-0 md:flex-row max-w-7xl lg:px-16">
             {/* Content */}
-            <div className="box-border w-full text-black border-solid md:w-1/2 md:pl-6 xl:pl-32">
-              <h2 className="m-0 text-xl font-semibold leading-tight border-0 border-gray-300 lg:text-3xl md:text-2xl">
+            <div className="box-border w-full text-foreground border-solid md:w-1/2 md:pl-6 xl:pl-32">
+              <h2 className="m-0 text-xl font-semibold leading-tight border-0 border-border lg:text-3xl md:text-2xl">
                 Managed Tasks
               </h2>
-              <p className="pt-4 pb-8 m-0 leading-7 text-gray-700 border-0 border-gray-300 sm:pr-10 lg:text-lg">
+              <p className="pt-4 pb-8 m-0 leading-7 text-muted-foreground border-0 border-border sm:pr-10 lg:text-lg">
                 Save time and money with our revolutionary services. We are the
                 leaders in the industry.
               </p>
-              <ul className="p-0 m-0 leading-6 border-0 border-gray-300">
-                <li className="box-border relative py-1 pl-0 text-left text-gray-500 border-solid">
+              <ul className="p-0 m-0 leading-6 border-0 border-border">
+                <li className="box-border relative py-1 pl-0 text-left text-muted-foreground border-solid">
                   <span className="inline-flex items-center justify-center w-6 h-6 mr-2 text-white bg-yellow-300 rounded-full">
                     <span className="text-sm font-bold">✓</span>
                   </span>{" "}
                   Automated task management workflow
                 </li>
-                <li className="box-border relative py-1 pl-0 text-left text-gray-500 border-solid">
+                <li className="box-border relative py-1 pl-0 text-left text-muted-foreground border-solid">
                   <span className="inline-flex items-center justify-center w-6 h-6 mr-2 text-white bg-yellow-300 rounded-full">
                     <span className="text-sm font-bold">✓</span>
                   </span>{" "}
                   Detailed analytics for your data
                 </li>
-                <li className="box-border relative py-1 pl-0 text-left text-gray-500 border-solid">
+                <li className="box-border relative py-1 pl-0 text-left text-muted-foreground border-solid">
                   <span className="inline-flex items-center justify-center w-6 h-6 mr-2 text-white bg-yellow-300 rounded-full">
                     <span className="text-sm font-bold">✓</span>
                   </span>{" "}

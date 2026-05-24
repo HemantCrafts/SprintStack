@@ -8,7 +8,7 @@ import { TestimonialComponent } from "@components/landing/TestimonialComponent"
 
 function HomePage() {
   return (
-    <>
+    <div className="min-h-screen bg-background text-foreground">
       <NavbarComponent />
 
       <HeroComponent />
@@ -22,7 +22,7 @@ function HomePage() {
       {/* <PricingComponent /> */}
       
       <FooterComponent />
-    </>
+    </div>
   )
 }
 

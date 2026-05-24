@@ -99,7 +99,7 @@ function ColumnContainer({
                     onClick={() => {
                         deleteColumn(column.id);
                     }}
-                    className=" stroke-gray-500 hover:stroke-white hover:bg-columnBackgroundColor rounded px-1 py-2"
+                    className="stroke-muted-foreground hover:stroke-foreground hover:bg-muted rounded px-1 py-2"
                 >
                     <RxTrash />
                 </button>
@@ -120,7 +120,7 @@ function ColumnContainer({
             </div>
             {/* Column footer */}
             <button
-                className="flex gap-2 items-center border-columnBackgroundColor border-2 rounded-md p-4 border-x-columnBackgroundColor hover:bg-mainBackgroundColor hover:text-rose-500 active:bg-black"
+                className="flex gap-2 items-center border-border border-2 rounded-md p-4 hover:bg-mainBackgroundColor hover:text-rose-500 dark:hover:text-rose-400 active:bg-muted text-foreground"
                 onClick={() => {
                     createTask(column.id);
                 }}

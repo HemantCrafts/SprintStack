@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { Link, useNavigate } from "react-router-dom"
 import React, { useEffect, useState } from 'react';
 import { OTPForm } from '@components/forms/OTPForm';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 // import PasswordResetForm from '@components/forms/PasswordResetForm';
 
@@ -39,16 +40,16 @@ export default function UserLoginPage() {
 
     return (
         <>
-            <div className="container relative grid h-screen flex-col items-center justify-center grid-cols-1 lg:max-w-none lg:grid-cols-2 lg:px-0">
-                <Link
-                    to="/register"
-                    className={cn(
-                        buttonVariants({ variant: "ghost" }),
-                        "absolute right-4 top-4 md:right-8 md:top-8"
-                    )}
-                >
-                    Register
-                </Link>
+            <div className="container relative grid h-screen flex-col items-center justify-center grid-cols-1 lg:max-w-none lg:grid-cols-2 lg:px-0 bg-background">
+                <div className="absolute right-4 top-4 md:right-8 md:top-8 flex items-center gap-2">
+                    <ThemeToggle />
+                    <Link
+                        to="/register"
+                        className={cn(buttonVariants({ variant: "ghost" }))}
+                    >
+                        Register
+                    </Link>
+                </div>
                 <AuthSideHalf />
                 <div className="lg:p-8">
 

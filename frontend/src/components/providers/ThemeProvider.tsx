@@ -1,72 +1,102 @@
-import { createContext, useContext, useEffect, useState } from "react"
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react"
+import {
+  applyThemeToDocument,
+  getStoredTheme,
+  getSystemTheme,
+  resolveTheme,
+  THEME_STORAGE_KEY,
+  type ResolvedTheme,
+  type Theme,
+} from "@/lib/theme"
 
 type ThemeProviderProps = {
-    children: React.ReactNode
-    defaultTheme?: string
-    storageKey?: string
+  children: React.ReactNode
+  defaultTheme?: Theme
+  storageKey?: string
 }
 
-type ThemeProviderState = {
-    theme: string
-    setTheme: (theme: string) => void
+type ThemeContextValue = {
+  /** User preference: light, dark, or system */
+  theme: Theme
+  /** Resolved appearance applied to the document */
+  currentTheme: ResolvedTheme
+  setTheme: (theme: Theme) => void
+  toggleTheme: () => void
 }
 
-const initialState = {
-    theme: "system",
-    setTheme: () => null,
-}
-
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
-4
+const ThemeContext = createContext<ThemeContextValue | undefined>(undefined)
 
 export function ThemeProvider({
-    children,
-    defaultTheme = "system",
-    storageKey = "vite-ui-theme",
-    ...props
+  children,
+  defaultTheme = "system",
+  storageKey = THEME_STORAGE_KEY,
 }: ThemeProviderProps) {
-    const [theme, setTheme] = useState(
-        () => localStorage.getItem(storageKey) || defaultTheme
-    )
+  const [theme, setThemeState] = useState<Theme>(() => {
+    return getStoredTheme() ?? defaultTheme
+  })
 
-    useEffect(() => {
-        const root = window.document.documentElement
+  const [currentTheme, setCurrentTheme] = useState<ResolvedTheme>(() =>
+    resolveTheme(getStoredTheme() ?? defaultTheme)
+  )
 
-        root.classList.remove("light", "dark")
+  const applyResolved = useCallback((resolved: ResolvedTheme) => {
+    applyThemeToDocument(resolved)
+    setCurrentTheme(resolved)
+  }, [])
 
-        if (theme === "system") {
-            const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-                .matches
-                ? "dark"
-                : "light"
+  useEffect(() => {
+    const resolved = resolveTheme(theme)
+    applyResolved(resolved)
+    localStorage.setItem(storageKey, theme)
+  }, [theme, storageKey, applyResolved])
 
-            root.classList.add(systemTheme)
-            return
-        }
+  useEffect(() => {
+    if (theme !== "system") return
 
-        root.classList.add(theme)
-    }, [theme])
+    const media = window.matchMedia("(prefers-color-scheme: dark)")
+    const onChange = () => applyResolved(getSystemTheme())
 
-    const value = {
-        theme,
-        setTheme: (theme: string) => {
-            localStorage.setItem(storageKey, theme)
-            setTheme(theme)
-        },
-    }
+    media.addEventListener("change", onChange)
+    return () => media.removeEventListener("change", onChange)
+  }, [theme, applyResolved])
 
-    return (
-        <ThemeProviderContext.Provider {...props} value={value}>
-            {children}
-        </ThemeProviderContext.Provider>
-    )
+  const setTheme = useCallback((next: Theme) => {
+    setThemeState(next)
+  }, [])
+
+  const toggleTheme = useCallback(() => {
+    setThemeState((prev) => {
+      const resolved = resolveTheme(prev)
+      return resolved === "dark" ? "light" : "dark"
+    })
+  }, [])
+
+  const value = useMemo(
+    () => ({
+      theme,
+      currentTheme,
+      setTheme,
+      toggleTheme,
+    }),
+    [theme, currentTheme, setTheme, toggleTheme]
+  )
+
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  )
 }
 
-export const useTheme = () => {
-    const context = useContext(ThemeProviderContext)
-
-    if (context === undefined)
-        throw new Error("useTheme must be used within a ThemeProvider")
-
-    return context
+export function useTheme(): ThemeContextValue {
+  const context = useContext(ThemeContext)
+  if (context === undefined) {
+    throw new Error("useTheme must be used within a ThemeProvider")
+  }
+  return context
 }

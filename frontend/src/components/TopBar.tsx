@@ -23,6 +23,7 @@ import {RxHamburgerMenu} from 'react-icons/rx';
 import useUser from "@hooks/user/useUser"
 import useLogout from "@hooks/user/useLogout"
 import { useSidebar } from "@/stores/useSidebar"
+import { ThemeToggle } from "@/components/theme/ThemeToggle"
 
 export function UserNav() {
 
@@ -135,7 +136,7 @@ export function TopBar() {
     return (
         <>
             <div className="hidden flex-col md:flex">
-                <div className="border-b">
+                <div className="border-b border-border bg-background">
                     <div className="flex h-16 items-center px-4">
                         <div className="flex items-center text-lg font-medium">
                             {/* todo: Hide this in routes except for dashboard */}
@@ -155,7 +156,8 @@ export function TopBar() {
                             taskSync
                         </div>
                         <MainNav className="mx-6" />
-                        <div className="ml-auto flex items-center space-x-4">
+                        <div className="ml-auto flex items-center space-x-2">
+                            <ThemeToggle />
                             <Search />
                             <UserNav />
                         </div>

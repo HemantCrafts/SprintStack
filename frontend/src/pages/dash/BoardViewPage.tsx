@@ -5,7 +5,7 @@ const BoardViewPage = () => {
   const {boardId} = useParams();
 
   return (
-    <div><KanbanBoard boardId={boardId || ''}/></div>
+    <div className="bg-offWhite dark:bg-background min-h-full"><KanbanBoard boardId={boardId || ''}/></div>
   )
 }
 

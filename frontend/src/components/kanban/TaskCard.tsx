@@ -67,10 +67,10 @@ function TaskCard({ task, deleteTask, updateTask }: Props) {
                 style={style}
                 {...attributes}
                 {...listeners}
-                className="bg-white border border-gray-200 shadow-md rounded-xl p-2.5 h-[60px] min-h-[60px] items-center flex text-left hover:ring-2 hover:ring-inset hover:ring-rose-500 cursor-grab relative"
+                className="bg-card border border-border shadow-md rounded-xl p-2.5 h-[60px] min-h-[60px] items-center flex text-left hover:ring-2 hover:ring-inset hover:ring-rose-500 cursor-grab relative text-card-foreground"
             >
                 <textarea
-                    className="h-[99%] w-full resize-none border-gray-500 rounded bg-transparent text-black focus:outline-none "
+                    className="h-[99%] w-full resize-none border-border rounded bg-transparent text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     value={task.content}
                     autoFocus
                     placeholder="Task content here"
@@ -93,7 +93,7 @@ function TaskCard({ task, deleteTask, updateTask }: Props) {
             {...attributes}
             {...listeners}
             onDoubleClick={toggleEditMode}
-            className="bg-white border border-gray-200 shadow-md p-2.5 rounded-xl max-h-[90px] min-h-[60px] items-center flex text-left cursor-grab relative task"
+            className="bg-card border border-border shadow-md p-2.5 rounded-xl max-h-[90px] min-h-[60px] items-center flex text-left cursor-grab relative task text-card-foreground"
             onMouseEnter={() => {
                 setMouseIsOver(true);
             }}
@@ -113,7 +113,7 @@ function TaskCard({ task, deleteTask, updateTask }: Props) {
                         <RxPencil2 />
                     </button> */}
                     <AddLabelPopover labelText={labelText} setLabelText={setLabelText}>
-                        <button className="stroke-white absolute right-10 top-1/2 -translate-y-1/2 bg-columnBackgroundColor p-2 rounded opacity-60 hover:opacity-100">
+                        <button className="stroke-foreground absolute right-10 top-1/2 -translate-y-1/2 bg-muted p-2 rounded opacity-80 hover:opacity-100">
                             <AiOutlineTags size={20} />
                         </button>
                     </AddLabelPopover>
@@ -121,7 +121,7 @@ function TaskCard({ task, deleteTask, updateTask }: Props) {
                         onClick={() => {
                             deleteTask(task.id);
                         }}
-                        className="stroke-white absolute right-4 top-1/2 -translate-y-1/2 bg-columnBackgroundColor p-2 rounded opacity-60 hover:opacity-100"
+                        className="stroke-foreground absolute right-4 top-1/2 -translate-y-1/2 bg-muted p-2 rounded opacity-80 hover:opacity-100"
                     >
                         <RxTrash />
                     </button>

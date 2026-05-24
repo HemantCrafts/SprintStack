@@ -1,12 +1,33 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" suppressHydrationWarning>
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>taskSync</title>
+    <script>
+      (function () {
+        try {
+          var key = "vite-ui-theme";
+          var stored = localStorage.getItem(key);
+          var theme =
+            stored === "light" || stored === "dark" || stored === "system"
+              ? stored
+              : "system";
+          var resolved =
+            theme === "system"
+              ? window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light"
+              : theme;
+          var root = document.documentElement;
+          root.classList.remove("light", "dark");
+          if (resolved === "dark") root.classList.add("dark");
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body>
+  <body class="theme-transition">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

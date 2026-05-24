@@ -24,7 +24,7 @@ const HomeComponent = () => {
           {
             data?.recentBoards.map(board => (
               <Link key={board.boardId} to={`/dash/boards/${board.boardId}`}>
-                <div className="rounded-md border px-4 py-3 font-mono text-sm bg-white hover:bg-muted hover:cursor-pointer">
+                <div className="rounded-md border border-border px-4 py-3 font-mono text-sm bg-card hover:bg-muted hover:cursor-pointer">
                   @{board.createdBy}/{slugify(board.boardName)}
                 </div>
               </Link>

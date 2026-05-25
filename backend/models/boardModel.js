@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import List from "./listModel.js";
 import Card from "./cardModel.js";
+import { resolveUserId } from "../utils/boardAccess.js";
 
 const boardSchema = mongoose.Schema(
     {
@@ -48,8 +49,9 @@ const boardSchema = mongoose.Schema(
 );
 
 boardSchema.methods.hasCollaborator = function(userId) {
+    const uid = userId.toString();
     for (const collaborator of this.collaborators) {
-        if (collaborator.user.toString() === userId.toString()) {
+        if (resolveUserId(collaborator.user) === uid) {
             return true;
         }
     }

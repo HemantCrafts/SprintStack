@@ -24,8 +24,12 @@ import LoadingSpinner from '@components/LoadingSpinner';
 // import { Button } from '@components/ui/button';
 import InviteCollaboratorModal from '@components/modals/InviteCollaboratorModal';
 import EditBoardSheet from '@components/modals/EditBoardSheet';
+import CollaboratorsModal from '@components/modals/CollaboratorsModal';
+import CollaboratorsButton from '@components/kanban/collaborators/CollaboratorsButton';
 import useUser from '@hooks/user/useUser';
 import debounce from 'lodash/debounce';
+import { getBoardAccess } from '@/lib/boardAccess';
+import { Badge } from '@components/ui/badge';
 
 export type Id = string | number;
 
@@ -58,6 +62,7 @@ function KanbanBoard({ boardId }: KanbanBoardProps) {
 
     const [activeColumn, setActiveColumn] = useState<Column | null>(null);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
+    const [openCollaborators, setOpenCollaborators] = useState(false);
 
     const { data: boardData, isLoading, refetch, isFetching, isError, error } = thisBoard.getBoardQuery; // { isError} as well 
     const queryRefetch = useRefetch();
@@ -80,11 +85,12 @@ function KanbanBoard({ boardId }: KanbanBoardProps) {
     ).current;
 
 
-    // todo: Fix this.
-    const canEditBoard = useMemo(() => {
-        const isCollaborator = boardData?.board.collaborators.find(user => user.role === 'EDITOR' && user.user === userQuery.data?._id);
-        return (isCollaborator === undefined || boardData?.board.createdBy._id !== userQuery.data?._id)
-    }, [userQuery.data?._id, boardData?.board.createdBy._id, boardData?.board.collaborators]);
+    const boardAccess = useMemo(
+        () => getBoardAccess(boardData, userQuery.data?._id),
+        [boardData, userQuery.data?._id]
+    );
+    const canEdit = boardAccess.canEdit;
+    const isBoardOwner = boardAccess.isOwner;
 
     useEffect(() => {
         if (!isLoading) {
@@ -124,39 +130,61 @@ function KanbanBoard({ boardId }: KanbanBoardProps) {
 
     return (
         <>
-            <div className="m-auto px-[40px] pb-[30px] w-full flex justify-between items-center">
-                <div>
+            <div className="m-auto w-full px-[40px] pb-[30px]">
+                <div className="flex flex-wrap items-center gap-3">
                     <h1 className="text-xl font-bold">{boardData?.board.title || "Untitled Board"}</h1>
-                    <p>{boardData?.board.description}</p>
+                    {!isBoardOwner && boardAccess.role && (
+                        <Badge variant="outline" className="border-blue-500/40 bg-blue-500/10 text-blue-200 text-[10px] uppercase tracking-wide">
+                            {boardAccess.role === 'VIEWER' ? 'View only' : 'Collaborator'}
+                        </Badge>
+                    )}
+                    <CollaboratorsButton onClick={() => setOpenCollaborators(true)} />
+                    <CollaboratorsModal
+                        open={openCollaborators}
+                        onOpenChange={setOpenCollaborators}
+                        boardData={boardData}
+                        boardId={boardId || ''}
+                        currentUserId={userQuery.data?._id}
+                        onRemoveCollaborator={isBoardOwner ? removeCollaborator : undefined}
+                        onEditCollaboratorRole={isBoardOwner ? editCollaboratorRole : undefined}
+                        isRemoving={thisBoard.removeCollaboratorMutation.isLoading}
+                        isUpdatingRole={thisBoard.editCollaboratorMutation.isLoading}
+                    />
+                    <div className="flex-1" />
+                    <div className="flex items-center gap-3 shrink-0">
+                        {isBoardOwner && (
+                            <EditBoardSheet boardData={boardData}>
+                                <Button variant="ghost" aria-label="Board settings"><RxGear className="cursor-pointer" size={24} /></Button>
+                            </EditBoardSheet>
+                        )}
+                        { (isFetching || isLoading) ? <LuLoader2 size={24} className="animate-spin" /> : <RxReload size={24} className="cursor-pointer" onClick={() => refetch()}/> }
+                        { 
+                            isBoardOwner &&  
+                            <InviteCollaboratorModal inviteCollaborator={inviteCollaborator}>
+                                <Button variant="ghost">Invite</Button>
+                            </InviteCollaboratorModal>
+                        }
+                    </div>
                 </div>
-                <div className="flex items-center gap-4">
-                    <EditBoardSheet boardData={boardData}>
-                        <Button variant="ghost"><RxGear className="cursor-pointer" size={24} /></Button>
-                    </EditBoardSheet>
-                    { (isFetching || isLoading) ? <LuLoader2 size={24} className="animate-spin" /> : <RxReload size={24} className="cursor-pointer" onClick={() => refetch()}/> }
-                    { 
-                        canEditBoard &&  
-                        <InviteCollaboratorModal inviteCollaborator={inviteCollaborator}>
-                            <Button variant="ghost">Invite</Button>
-                        </InviteCollaboratorModal>
-                    }
-                    
-                </div>
+                {boardData?.board.description && (
+                    <p className="mt-1 text-muted-foreground">{boardData.board.description}</p>
+                )}
             </div>
             <div className="m-auto flex h-full w-full items-start overflow-x-auto overflow-y-hidden px-[40px]">
                 <DndContext
-                    sensors={sensors}
-                    onDragStart={onDragStart}
-                    onDragEnd={onDragEnd}
-                    onDragOver={onDragOver}
+                    sensors={canEdit ? sensors : []}
+                    onDragStart={canEdit ? onDragStart : undefined}
+                    onDragEnd={canEdit ? onDragEnd : undefined}
+                    onDragOver={canEdit ? onDragOver : undefined}
                 >
-                    <div className="flex gap-4">
-                        <div className="flex gap-4">
+                    <div className="flex gap-4 items-start">
+                        <div className="flex gap-4 items-start">
                             <SortableContext items={columnsId}>
                                 {columns.map((col) => (
                                     <ColumnContainer
                                         key={col.id}
                                         column={col}
+                                        canEdit={canEdit}
                                         deleteColumn={deleteColumn}
                                         updateColumn={updateColumn}
                                         createTask={createTask}
@@ -167,16 +195,18 @@ function KanbanBoard({ boardId }: KanbanBoardProps) {
                                 ))}
                             </SortableContext>
                         </div>
-                        <button
-                            onClick={async () => {
-                                await createNewColumn();
-                            }}
-                            disabled={isFetching}
-                            className="h-[50px] w-[250px] min-w-[250px] cursor-pointer rounded-lg bg-mainBackgroundColor border-2 border-columnBackgroundColor p-4 flex gap-2 items-center"
-                        >
-                            <RxPlus />
-                            Add Column
-                        </button>
+                        {canEdit && (
+                            <button
+                                onClick={async () => {
+                                    await createNewColumn();
+                                }}
+                                disabled={isFetching}
+                                className="h-[50px] w-[320px] min-w-[320px] cursor-pointer rounded-lg bg-mainBackgroundColor border-2 border-dashed border-border hover:border-primary/40 hover:bg-accent p-4 flex gap-2 items-center text-muted-foreground hover:text-accent-foreground transition-all duration-200"
+                            >
+                                <RxPlus />
+                                Add Column
+                            </button>
+                        )}
                     </div>
 
                     {createPortal(
@@ -184,6 +214,7 @@ function KanbanBoard({ boardId }: KanbanBoardProps) {
                             {activeColumn && (
                                 <ColumnContainer
                                     column={activeColumn}
+                                    canEdit={canEdit}
                                     deleteColumn={deleteColumn}
                                     updateColumn={updateColumn}
                                     createTask={createTask}
@@ -197,6 +228,7 @@ function KanbanBoard({ boardId }: KanbanBoardProps) {
                             {activeTask && (
                                 <TaskCard
                                     task={activeTask}
+                                    canEdit={canEdit}
                                     deleteTask={deleteTask}
                                     updateTask={updateTask}
                                 />
@@ -337,6 +369,34 @@ function KanbanBoard({ boardId }: KanbanBoardProps) {
         }
 
         return false;
+    }
+
+    async function removeCollaborator(collaboratorId: string) {
+        try {
+            await thisBoard.removeCollaboratorMutation.mutateAsync(collaboratorId);
+            toast({ title: 'Collaborator removed', description: 'They no longer have access to this board.' });
+        } catch (error) {
+            console.error(error);
+            toast({
+                variant: 'destructive',
+                title: 'An error occurred.',
+                description: 'Unable to remove collaborator.',
+            });
+        }
+    }
+
+    async function editCollaboratorRole(collaboratorId: string, role: 'EDITOR' | 'GUEST') {
+        try {
+            await thisBoard.editCollaboratorMutation.mutateAsync({ collaboratorId, data: { role } });
+            toast({ title: 'Role updated', description: 'Collaborator permissions have been updated.' });
+        } catch (error) {
+            console.error(error);
+            toast({
+                variant: 'destructive',
+                title: 'An error occurred.',
+                description: 'Unable to update collaborator role.',
+            });
+        }
     }
 
     async function inviteCollaborator(collaboratorEmail: string) {

@@ -6,6 +6,9 @@ import { getUser, removeUser, saveUser } from '@/lib/dataStorage';
 interface Board {
     _id: string;
     title: string;
+    isShared?: boolean;
+    membershipRole?: string;
+    ownerUsername?: string | null;
 }
 
 /**

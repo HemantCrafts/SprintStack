@@ -1,11 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { API_ROUTES } from '@constants/routes';
 
+export type MembershipRole = 'OWNER' | 'EDITOR' | 'VIEWER';
+
 export interface Board {
     _id: string;
     title: string;
     description: string;
     updatedAt: Date;
+    isShared?: boolean;
+    membershipRole?: MembershipRole;
+    ownerUsername?: string | null;
 }
 
 interface RecentBoard {

@@ -10,15 +10,26 @@ import { formatDistanceToNow } from 'date-fns';
 import { RxDoubleArrowRight, RxCircle } from 'react-icons/rx';
 import { Link } from 'react-router-dom';
 import { Board } from "@hooks/user/useDashboard";
+import { Badge } from "@components/ui/badge";
 
-const BoardCardComponent = ({ _id, title, description, updatedAt }: Board) => {
+const BoardCardComponent = ({ _id, title, description, updatedAt, isShared, membershipRole, ownerUsername }: Board) => {
     return (
         <Card className="m-2 max-w-[450px]">
             <CardHeader className="grid grid-cols-[1fr_110px] items-start gap-4 space-y-0">
                 <div className="space-y-1">
-                    <CardTitle>{title}</CardTitle>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <CardTitle>{title}</CardTitle>
+                        {isShared && (
+                            <Badge variant="outline" className="border-blue-500/40 bg-blue-500/10 text-blue-200 text-[10px] uppercase tracking-wide">
+                                Shared
+                            </Badge>
+                        )}
+                    </div>
                     <CardDescription>
                         {description}
+                        {isShared && ownerUsername && (
+                            <span className="block text-xs mt-1">Owner @{ownerUsername}</span>
+                        )}
                     </CardDescription>
                 </div>
                 <div className="flex items-center space-x-1 rounded-md bg-secondary text-secondary-foreground">
@@ -32,7 +43,7 @@ const BoardCardComponent = ({ _id, title, description, updatedAt }: Board) => {
                 <div className="flex space-x-4 text-sm text-muted-foreground">
                     <div className="flex items-center">
                         <RxCircle className="mr-1 h-3 w-3 fill-sky-400 text-sky-400" />
-                        Board
+                        {isShared ? (membershipRole === 'VIEWER' ? 'Collaborator · View' : 'Collaborator') : 'Board'}
                     </div>
                     <div>• Updated {formatDistanceToNow(new Date(updatedAt))} ago</div>
                 </div>

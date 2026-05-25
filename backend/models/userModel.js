@@ -25,7 +25,15 @@ const userSchema = mongoose.Schema(
         },
         password: {
             type: String,
-            required: true,
+            required: false, // Optional for Google Auth
+        },
+        authProvider: {
+            type: String,
+            enum: ['local', 'google'],
+            default: 'local',
+        },
+        googleId: {
+            type: String,
         },
         premium: {
             type: Boolean,
@@ -150,12 +158,13 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 }
 
 userSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) {
-        next();
+    if (!this.isModified('password') || !this.password) {
+        return next();
     }
 
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
+    next();
 });
 
 const User = mongoose.model('User', userSchema);

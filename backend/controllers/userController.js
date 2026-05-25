@@ -8,6 +8,24 @@ import {
   sendVerificationEmail,
 } from "../utils/mailer.js";
 import { generateOTP, generateVerificationCode } from "../utils/utils.js";
+import { OAuth2Client } from "google-auth-library";
+import {
+  accessibleBoardsFilter,
+  formatBoardForDashboard,
+} from "../utils/boardAccess.js";
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+async function fetchAccessibleBoards(userId) {
+  const boards = await Board.find(accessibleBoardsFilter(userId))
+    .select("_id title description updatedAt createdBy collaborators")
+    .populate("createdBy", "username")
+    .sort({ updatedAt: -1 })
+    .lean();
+
+  return boards.map((board) => formatBoardForDashboard(board, userId));
+}
+
 
 // @desc    Auth user/set token
 // route    POST /api/user/login
@@ -70,10 +88,7 @@ const loginUser = asyncHandler(async (req, res) => {
       }
     }
 
-    const boards = await Board.find({ createdBy: user._id })
-      .select("_id title")
-      .sort({ updatedAt: -1 }) // latest first
-      .lean();
+    const boards = await fetchAccessibleBoards(user._id);
 
     generateToken(res, user._id);
     res.status(201).json({
@@ -88,7 +103,7 @@ const loginUser = asyncHandler(async (req, res) => {
           emailNotifications: user.preferences.emailNotifications,
           mfa: user.preferences.mfa,
         },
-        boards: [...boards],
+        boards,
       },
     });
     console.log(`🔰 [login] @${user.username} has logged in.`);
@@ -152,6 +167,79 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Auth user with Google
+// route    POST /api/user/google
+// @access  Public
+const googleAuth = asyncHandler(async (req, res) => {
+  const { credential } = req.body;
+  if (!credential) {
+    res.status(400);
+    throw new Error("Missing Google credential");
+  }
+
+  const ticket = await client.verifyIdToken({
+    idToken: credential,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+  const payload = ticket.getPayload();
+  if (!payload) {
+    res.status(400);
+    throw new Error("Invalid Google token");
+  }
+
+  const { email, sub: googleId, name } = payload;
+
+  let user = await User.findOne({ email });
+
+  if (user) {
+    if (!user.googleId) {
+      user.googleId = googleId;
+      if (user.authProvider !== 'google') {
+        user.authProvider = "google";
+      }
+      user.verified = true;
+      await user.save();
+    }
+  } else {
+    const baseUsername = email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+    let username = baseUsername;
+    let count = 1;
+    while (await User.findOne({ username })) {
+      username = `${baseUsername}${count}`;
+      count++;
+    }
+
+    user = await User.create({
+      username,
+      email,
+      name,
+      googleId,
+      authProvider: "google",
+      verified: true,
+    });
+  }
+
+  const boards = await fetchAccessibleBoards(user._id);
+
+  generateToken(res, user._id);
+  res.status(201).json({
+    success: true,
+    user: {
+      _id: user._id,
+      name: user?.name,
+      username: user.username,
+      email: user.email,
+      premium: user.premium,
+      preferences: {
+        emailNotifications: user.preferences?.emailNotifications || false,
+        mfa: user.preferences?.mfa || false,
+      },
+      boards,
+    },
+  });
+  console.log(`🔰 [login] @${user.username} has logged in with Google.`);
+});
+
 // @desc    Logs out user
 // route    POST /api/user/logout
 // @access  Public
@@ -191,10 +279,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
 // route    GET /api/user
 // @access  Private
 const getUserData = asyncHandler(async (req, res) => {
-  const boards = await Board.find({ createdBy: req.user._id })
-    .select("_id title")
-    .sort({ updatedAt: -1 }) // latest first
-    .lean();
+  const boards = await fetchAccessibleBoards(req.user._id);
 
   const userData = {
     _id: req.user._id,
@@ -268,11 +353,7 @@ const updateUserData = asyncHandler(async (req, res) => {
 // route    GET /api/dashboard
 // @access  Private
 const getDashboard = asyncHandler(async (req, res) => {
-  const boards =
-    (await Board.find({ createdBy: req.user._id })
-      .select("_id title description updatedAt")
-      .sort({ updatedAt: -1 }) // latest first
-      .lean()) || [];
+  const boards = await fetchAccessibleBoards(req.user._id);
   const recentBoards = await User.findById(req.user._id)
     .select("recentBoards")
     .lean();
@@ -307,6 +388,7 @@ const debugList = asyncHandler(async (req, res) => {
 export default {
   loginUser,
   registerUser,
+  googleAuth,
   logoutUser,
   verifyEmail,
   getUserData,

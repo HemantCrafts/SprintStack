@@ -7,6 +7,7 @@ const router = express.Router();
 /* Authentication */
 router.post("/", userController.registerUser);
 router.post("/login", userController.loginUser);
+router.post("/google", userController.googleAuth);
 router.post("/logout", userController.logoutUser);
 router.get("/verify/:code", userController.verifyEmail);
 

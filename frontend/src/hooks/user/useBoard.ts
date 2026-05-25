@@ -15,10 +15,17 @@ export interface SuccessResponse {
 
 export type GenericResponse = ErrorResponse | SuccessResponse;
 
-interface Collaborator {
-    user: string; // Assuming the user is identified by a string (e.g., user's ID)
+export interface CollaboratorUser {
+    _id: string;
+    username: string;
+    email: string;
+}
+
+export interface Collaborator {
+    _id: string;
+    user: CollaboratorUser | string;
     active: boolean;
-    role: "EDITOR" | "GUEST";
+    role: "EDITOR" | "GUEST" | "VIEWER";
 }
 
 interface Board {
@@ -26,19 +33,25 @@ interface Board {
     title: string;
     description?: string | null; // Description is optional and can be null
     visibility: "PUBLIC" | "PRIVATE";
-    createdBy: {
-        _id: string;
-        username: string;
-    };
+    createdBy: CollaboratorUser;
     collaborators: Collaborator[];
     createdAt: Date;
     updatedAt: Date;
+}
+
+export type BoardRole = 'OWNER' | 'EDITOR' | 'VIEWER';
+
+export interface BoardAccess {
+    role: BoardRole | null;
+    canEdit: boolean;
+    isOwner: boolean;
 }
 
 export interface BoardData {
     board: Board;
     columns: Column[];
     tasks: Task[];
+    access?: BoardAccess;
 }
 
 type GetBoardResponse = { success: true; data: BoardData } | ErrorResponse;
@@ -144,6 +157,10 @@ const useBoard = (boardId: string) => {
                 throw new Error(res.message);
             }
             return res;
+        }, {
+            onSuccess: () => {
+                queryClient.invalidateQueries(queryKey);
+            }
         }
     );
 
@@ -163,6 +180,10 @@ const useBoard = (boardId: string) => {
                 throw new Error(res.message);
             }
             return res;
+        }, {
+            onSuccess: () => {
+                queryClient.invalidateQueries(queryKey);
+            }
         }
     );
 
@@ -177,6 +198,10 @@ const useBoard = (boardId: string) => {
                 throw new Error(data.message);
             }
             return data;
+        }, {
+            onSuccess: () => {
+                queryClient.invalidateQueries(queryKey);
+            }
         }
     );
 

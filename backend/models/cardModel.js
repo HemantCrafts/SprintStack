@@ -193,7 +193,7 @@ cardSchema.statics.moveCard = async function (boardId, cardId, { columnId, posit
 
     return card; // Return the moved card.
 };
-
+ 
 const Card = mongoose.model('Card', cardSchema);
 
 export default Card;

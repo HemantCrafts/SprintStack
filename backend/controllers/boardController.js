@@ -4,6 +4,36 @@ import List from "../models/listModel.js";
 import Card from "../models/cardModel.js";
 import User from "../models/userModel.js";
 import { getInviteLink, sendBoardInvite } from "../utils/mailer.js";
+import {
+    buildBoardAccess,
+    canAccessBoard,
+    canEditBoard,
+    isBoardOwner,
+    resolveUserId,
+} from "../utils/boardAccess.js";
+
+async function loadBoard(boardId, res) {
+    const board = await Board.findById(boardId);
+    if (!board) {
+        res.status(404);
+        throw new Error("Board not found.");
+    }
+    return board;
+}
+
+function assertBoardOwner(board, userId, res) {
+    if (!isBoardOwner(board, userId)) {
+        res.status(403);
+        throw new Error("Only the board owner can perform this action.");
+    }
+}
+
+function assertBoardEditAccess(board, userId, res) {
+    if (!canEditBoard(board, userId)) {
+        res.status(403);
+        throw new Error("You do not have permission to edit this board.");
+    }
+}
 
 // @desc    Creates a board with the given information.
 // route    POST /api/boards/
@@ -24,11 +54,8 @@ const editBoard = asyncHandler(async (req, res) => {
     const { title, description, visibility } = req.body;
     const { boardId } = req.params;
     // title, description, visibility, createdBy, collaborators(user, active, role)
-    const board = await Board.findById(boardId);
-    if (!board) {
-        res.status(404);
-        throw new Error("Board not found.");
-    }
+    const board = await loadBoard(boardId, res);
+    assertBoardOwner(board, req.user._id, res);
 
     board.title = title || board.title;
     board.description = description || board.description;
@@ -46,11 +73,8 @@ const editBoard = asyncHandler(async (req, res) => {
 // @access  Private
 const deleteBoard = asyncHandler(async (req, res) => {
     const { boardId } = req.params;
-    const board = await Board.findById(boardId);
-    if (!board) {
-        res.status(404);
-        throw new Error("Board not found.");
-    }
+    const board = await loadBoard(boardId, res);
+    assertBoardOwner(board, req.user._id, res);
     await board.deleteOne();
 
     res
@@ -65,14 +89,17 @@ const getBoard = asyncHandler(async (req, res) => {
     const { boardId } = req.params;
     const board = await Board.findById(boardId).populate({
         path: 'createdBy',
-        select: 'username'
+        select: 'username email'
+    }).populate({
+        path: 'collaborators.user',
+        select: 'username email'
     });
     if (!board) {
         res.status(404);
         throw new Error("Board not found.");
     }
 
-    if (!board.hasCollaborator(req.user._id) && board.createdBy._id.toString() !== req.user._id.toString()) {
+    if (!canAccessBoard(board, req.user._id)) {
         res.status(403);
         throw new Error("Unauthorized.");
     }
@@ -99,7 +126,8 @@ const getBoard = asyncHandler(async (req, res) => {
     const boardData = {
         board: board.toObject(),
         columns: lists,
-        tasks: cards
+        tasks: cards,
+        access: buildBoardAccess(board, req.user._id),
     }
     console.log(`🌀 [refetch : ${Date.now()}] @${req.user.username} is polling '${boardData.board.title}' board.`)
 
@@ -115,11 +143,8 @@ const inviteCollaborator = asyncHandler(async (req, res) => {
     const { boardId } = req.params;
     const { userEmail, role } = req.body;
 
-    const board = await Board.findById(boardId);
-    if (!board) {
-        res.status(404);
-        throw new Error("Board not found.");
-    }
+    const board = await loadBoard(boardId, res);
+    assertBoardOwner(board, req.user._id, res);
     const user = await User.findOne({ email: userEmail });
     if (!user) {
         res.status(404);
@@ -127,10 +152,11 @@ const inviteCollaborator = asyncHandler(async (req, res) => {
     }
 
     const link = getInviteLink(board._id);
+    const normalizedRole = role === "VIEWER" ? "GUEST" : role;
     board.collaborators.push({
         user: user._id,
         active: false,
-        role
+        role: normalizedRole
     });
 
     await board.save();
@@ -159,7 +185,9 @@ const verifyCollaborator = asyncHandler(async (req, res) => {
         throw new Error("This board is not accepting collaborators.");
     }
 
-    const collaboratorIndex = board.collaborators.findIndex(c => c.user.toString() === req.user._id.toString());
+    const collaboratorIndex = board.collaborators.findIndex(
+        (c) => resolveUserId(c.user) === req.user._id.toString()
+    );
     if (!board.collaborators[collaboratorIndex]) {
         res.status(403);
         throw new Error("User is not invited for collaboration.");
@@ -178,14 +206,12 @@ const verifyCollaborator = asyncHandler(async (req, res) => {
 // @access  Private
 const removeCollaborator = asyncHandler(async (req, res) => {
     const { boardId, collaboratorId } = req.params;
-    const board = await Board.findById(boardId);
+    const board = await loadBoard(boardId, res);
+    assertBoardOwner(board, req.user._id, res);
 
-    if (!board) {
-        res.status(404);
-        throw new Error("Board not found.");
-    }
-
-    const collaboratorIndex = board.collaborators.findIndex(c => c._id === collaboratorId);
+    const collaboratorIndex = board.collaborators.findIndex(
+        (c) => c._id.toString() === collaboratorId
+    );
 
     if (collaboratorIndex === -1) {
         res.status(404);
@@ -207,21 +233,19 @@ const removeCollaborator = asyncHandler(async (req, res) => {
 const editCollaborator = asyncHandler(async (req, res) => {
     const { boardId, collaboratorId } = req.params;
     const { role } = req.body;
-    const board = await Board.findById(boardId);
+    const board = await loadBoard(boardId, res);
+    assertBoardOwner(board, req.user._id, res);
 
-    if (!board) {
-        res.status(404);
-        throw new Error("Board not found.");
-    }
-
-    const collaborator = board.collaborators.find(c => c._id === collaboratorId);
+    const collaborator = board.collaborators.find(
+        (c) => c._id.toString() === collaboratorId
+    );
 
     if (!collaborator) {
         res.status(404);
         throw new Error("Collaborator not found.");
     }
 
-    collaborator.role = role;
+    collaborator.role = role === "VIEWER" ? "GUEST" : role;
 
     await board.save();
 
@@ -237,11 +261,8 @@ const addList = asyncHandler(async (req, res) => {
     const { boardId } = req.params;
     const { columnId, title } = req.body;
 
-    const board = await Board.findById(boardId);
-    if (!board) {
-        res.status(404);
-        throw new Error("Board not found.");
-    }
+    const board = await loadBoard(boardId, res);
+    assertBoardEditAccess(board, req.user._id, res);
 
     const list = await List.create({
         columnId, title, listOrder: 0,
@@ -261,11 +282,8 @@ const editList = asyncHandler(async (req, res) => {
     const { boardId, listId } = req.params;
     const { title } = req.body;
 
-    const board = await Board.findById(boardId);
-    if (!board) {
-        res.status(404);
-        throw new Error("Board not found.");
-    }
+    const board = await loadBoard(boardId, res);
+    assertBoardEditAccess(board, req.user._id, res);
 
     const list = await List.findOneAndUpdate(
         { columnId: listId, parentBoard: boardId },
@@ -289,11 +307,8 @@ const editList = asyncHandler(async (req, res) => {
 const deleteList = asyncHandler(async (req, res) => {
     const { boardId, listId } = req.params;
 
-    const board = await Board.findById(boardId);
-    if (!board) {
-        res.status(404);
-        throw new Error("Board not found.");
-    }
+    const board = await loadBoard(boardId, res);
+    assertBoardEditAccess(board, req.user._id, res);
     // Retrieve and delete the list.
     const list = await List.findOneAndDelete({ columnId: listId, parentBoard: boardId });
 
@@ -317,11 +332,8 @@ const addCard = asyncHandler(async (req, res) => {
     const { boardId } = req.params;
     const { columnId, taskId, title } = req.body;
 
-    const board = await Board.findById(boardId);
-    if (!board) {
-        res.status(404);
-        throw new Error("Board not found.");
-    }
+    const board = await loadBoard(boardId, res);
+    assertBoardEditAccess(board, req.user._id, res);
 
     const card = await Card.create({
         title, taskId, columnId,
@@ -341,11 +353,8 @@ const editCard = asyncHandler(async (req, res) => {
     const { boardId, cardId } = req.params;
     const { title, description, label } = req.body;
 
-    const board = await Board.findById(boardId);
-    if (!board) {
-        res.status(404);
-        throw new Error("Board not found.");
-    }
+    const board = await loadBoard(boardId, res);
+    assertBoardEditAccess(board, req.user._id, res);
 
     const card = await Card.findOneAndUpdate(
         { taskId: cardId, parentBoard: boardId },
@@ -369,6 +378,9 @@ const editCard = asyncHandler(async (req, res) => {
 const deleteCard = asyncHandler(async (req, res) => {
     const { boardId, cardId } = req.params;
 
+    const board = await loadBoard(boardId, res);
+    assertBoardEditAccess(board, req.user._id, res);
+
     const card = await Card.removeCard(boardId, cardId);
     if (!card) {
         res.status(404);
@@ -386,6 +398,9 @@ const deleteCard = asyncHandler(async (req, res) => {
 const moveCard = asyncHandler(async (req, res) => {
     const { boardId, cardId } = req.params;
     const { columnId, position } = req.body;
+
+    const board = await loadBoard(boardId, res);
+    assertBoardEditAccess(board, req.user._id, res);
 
     const card = await Card.moveCard(boardId, cardId, { columnId, position });
     if (!card) {

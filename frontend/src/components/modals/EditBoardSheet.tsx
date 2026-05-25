@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { useToast } from "@components/ui/use-toast";
+import { useDeleteAnimation } from "@components/providers/DeleteAnimationProvider.tsx";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +25,7 @@ interface EditBoardSheetProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export default function EditBoardSheet({ boardData, children }: EditBoardSheetProps) {
-
+    const { triggerDeleteAnimation } = useDeleteAnimation();
     const boardEditMutation = useEditBoardMutation(boardData?.board._id || '');
     const { toast } = useToast();
 
@@ -54,8 +55,9 @@ export default function EditBoardSheet({ boardData, children }: EditBoardSheetPr
         }
     }
 
-    async function deleteBoard() {
+    async function deleteBoard(e: React.MouseEvent<HTMLButtonElement>) {
         try {
+            await triggerDeleteAnimation(e);
             await boardEditMutation.deleteBoard.mutateAsync();
         } catch (error) {
             toast({ variant: "destructive", title: "Error", description: "An error occured." });
@@ -93,7 +95,7 @@ export default function EditBoardSheet({ boardData, children }: EditBoardSheetPr
                     <SheetFooter>
                         <Button disabled={boardEditMutation.editBoard.isLoading} type="submit">{boardEditMutation.editBoard.isLoading ? "Saving..." : "Save changes"}</Button>
                         <SheetClose asChild>
-                            <Button disabled={boardEditMutation.deleteBoard.isLoading} type="button" onClick={deleteBoard}>Delete Board</Button>
+                            <Button variant="destructive" disabled={boardEditMutation.deleteBoard.isLoading} type="button" onClick={deleteBoard} className="transition-all duration-300 ease-in-out hover:scale-105 active:scale-95">Delete Board</Button>
                         </SheetClose>
                     </SheetFooter>
                 </form>

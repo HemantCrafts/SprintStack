@@ -11,6 +11,8 @@ import { Label } from "@components/ui/label"
 import { Input } from "@components/ui/input"
 import { useToast } from "@/components/ui/use-toast"
 import useRegister from "@hooks/user/useRegister";
+import { GoogleLogin } from '@react-oauth/google';
+import useGoogleLoginMutation from '@hooks/user/useGoogleLoginMutation';
 
 interface RegisterFormProps extends React.HTMLAttributes<HTMLDivElement> { 
     setRegistered: React.Dispatch<React.SetStateAction<boolean>>;
@@ -26,12 +28,20 @@ export function RegisterForm({ className, setRegistered, ...props }: RegisterFor
     const passwordRef = useRef<HTMLInputElement | null>(null);
     const emailRef = useRef<HTMLInputElement | null>(null);
 
-    function handleGoogleAuth() {
-        toast({
-            title: "Google sign-in",
-            description: "Google login is not implemented in this project yet.",
-        })
-    }
+    const googleLoginQuery = useGoogleLoginMutation();
+
+    const handleGoogleSuccess = async (credentialResponse: any) => {
+        if (!credentialResponse.credential) return;
+        try {
+            const response = await googleLoginQuery.mutateAsync({ credential: credentialResponse.credential });
+            if (response.success) {
+                // Google accounts are pre-verified, so we can just redirect them to dashboard.
+                window.location.href = '/dash';
+            }
+        } catch (error: any) {
+            setFormError(error?.message || "Google signup failed.");
+        }
+    };
 
     async function onSubmit(event: React.SyntheticEvent) {
         event.preventDefault()
@@ -122,14 +132,12 @@ export function RegisterForm({ className, setRegistered, ...props }: RegisterFor
                     </span>
                 </div>
             </div>
-            <Button variant="outline" type="button" disabled={registerQuery.isLoading} onClick={handleGoogleAuth}>
-                {registerQuery.isLoading ? (
-                    <LuLoader2 className="animate-spin mr-2 h-4 w-4" />
-                ) : (
-                    <BiLogoGoogle className="mr-2 h-4 w-4" />
-                )}{" "}
-                Google
-            </Button>
+            <div className="flex justify-center w-full">
+                <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => setFormError("Google Signup Failed")}
+                />
+            </div>
             {formError && <p className="text-red-500 text-center">{formError}</p>}
             {registerQuery.isError && <p className="text-red-500 text-center">{registerQuery.error?.message}</p>}
         </div>

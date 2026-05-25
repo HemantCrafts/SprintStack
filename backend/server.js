@@ -1,6 +1,9 @@
 import dotenv from 'dotenv';
-dotenv.config();
 import path from 'path';
+import fs from 'fs';
+
+dotenv.config({ path: fs.existsSync('.env') ? '.env' : path.resolve(process.cwd(), '../.env') });
+
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import connectDB from './config/db.js';

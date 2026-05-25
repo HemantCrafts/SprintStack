@@ -44,8 +44,10 @@ function TaskCard({ task, canEdit = true, deleteTask, updateTask }: Props) {
     });
 
     const style = {
-        transition: isDragging ? transition : `${transition ?? ''} opacity 0.28s ease, transform 0.28s ease, max-height 0.35s ease`,
-        transform: CSS.Transform.toString(transform),
+        transition: isDragging 
+        ? transition 
+        : `${transition ?? ''} opacity 0.28s ease, transform 0.28s ease, max-height 0.35s ease`,
+        
         // Animate card collapsing away on delete
         ...(isDeleting ? {
             opacity: 0,
@@ -55,6 +57,7 @@ function TaskCard({ task, canEdit = true, deleteTask, updateTask }: Props) {
             marginBottom: '0px',
             overflow: 'hidden',
         } : {
+            transform: CSS.Transform.toString(transform),
             maxHeight: '200px',
         }),
     };

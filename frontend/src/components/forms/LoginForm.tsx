@@ -3,12 +3,10 @@ import React, {useRef, useState} from "react"
 import { cn } from "@/lib/utils"
 
 import {LuLoader2} from 'react-icons/lu';
-import {BiLogoGoogle} from 'react-icons/bi';
-
+import type { CredentialResponse } from "@react-oauth/google";
 import { Button } from "@components/ui/button"
 import { Label } from "@components/ui/label"
 import { Input } from "@components/ui/input"
-import { useToast } from "@/components/ui/use-toast"
 import useLogin from "@hooks/user/useLogin";
 import { GoogleLogin } from '@react-oauth/google';
 import useGoogleLoginMutation from '@hooks/user/useGoogleLoginMutation';
@@ -26,7 +24,6 @@ interface LoginFormProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function LoginForm({ className, setCredentials, setMFA, setOk, ...props }: LoginFormProps) {
     const loginQuery = useLogin();
-    const { toast } = useToast();
     const [formError, setFormError] = useState<string | null>(null);
     
     const usernameRef = useRef<HTMLInputElement | null>(null);
@@ -34,7 +31,7 @@ export function LoginForm({ className, setCredentials, setMFA, setOk, ...props }
 
     const googleLoginQuery = useGoogleLoginMutation();
 
-    const handleGoogleSuccess = async (credentialResponse: any) => {
+    const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
         if (!credentialResponse.credential) return;
         try {
             const response = await googleLoginQuery.mutateAsync({ credential: credentialResponse.credential });
@@ -46,9 +43,13 @@ export function LoginForm({ className, setCredentials, setMFA, setOk, ...props }
                     setOk(true);
                 }
             }
-        } catch (error: any) {
-            setFormError(error?.message || "Google login failed.");
-        }
+        } catch (error) {
+            if (error instanceof Error) {
+                setFormError(error.message);
+            } else {
+                setFormError("Google login failed.");
+            }
+        }   
     };
 
     async function onSubmit(event: React.SyntheticEvent) {
@@ -73,8 +74,12 @@ export function LoginForm({ className, setCredentials, setMFA, setOk, ...props }
                     setOk(true);
                 }
             }
-        } catch (error: any) {
-            const message = error?.message || "Something went wrong.";
+        } catch (error) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Something went wrong.";
+
             setFormError(message);
             console.error(error);
         }

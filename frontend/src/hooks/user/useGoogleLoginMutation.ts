@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { API_ROUTES } from '@constants/routes';
 import { LoginResponse, SuccessResponse } from './useLogin';
 
 interface GoogleLoginParams {

@@ -3,15 +3,14 @@ import React, {useRef, useState} from "react"
 import { cn } from "@/lib/utils"
 
 import {LuLoader2} from 'react-icons/lu';
-import {BiLogoGoogle} from 'react-icons/bi';
 
 // import { Icons } from "@/components/icons"
 import { Button } from "@components/ui/button"
 import { Label } from "@components/ui/label"
 import { Input } from "@components/ui/input"
-import { useToast } from "@/components/ui/use-toast"
 import useRegister from "@hooks/user/useRegister";
 import { GoogleLogin } from '@react-oauth/google';
+import type { CredentialResponse } from '@react-oauth/google';
 import useGoogleLoginMutation from '@hooks/user/useGoogleLoginMutation';
 
 interface RegisterFormProps extends React.HTMLAttributes<HTMLDivElement> { 
@@ -21,7 +20,6 @@ interface RegisterFormProps extends React.HTMLAttributes<HTMLDivElement> {
 export function RegisterForm({ className, setRegistered, ...props }: RegisterFormProps) {
 
     const registerQuery = useRegister();
-    const { toast } = useToast();
     const [formError, setFormError] = useState<string | null>(null);
 
     const usernameRef = useRef<HTMLInputElement | null>(null);
@@ -30,7 +28,7 @@ export function RegisterForm({ className, setRegistered, ...props }: RegisterFor
 
     const googleLoginQuery = useGoogleLoginMutation();
 
-    const handleGoogleSuccess = async (credentialResponse: any) => {
+    const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
         if (!credentialResponse.credential) return;
         try {
             const response = await googleLoginQuery.mutateAsync({ credential: credentialResponse.credential });
@@ -38,8 +36,12 @@ export function RegisterForm({ className, setRegistered, ...props }: RegisterFor
                 // Google accounts are pre-verified, so we can just redirect them to dashboard.
                 window.location.href = '/dash';
             }
-        } catch (error: any) {
-            setFormError(error?.message || "Google signup failed.");
+        }catch (error) {
+            if (error instanceof Error) {
+                setFormError(error.message);
+            } else {
+                setFormError("Google signup failed.");
+            }
         }
     };
 
@@ -61,8 +63,12 @@ export function RegisterForm({ className, setRegistered, ...props }: RegisterFor
             if (response.success) {
                 setRegistered(true);
             }
-        } catch (error: any) {
-            const message = error?.message || "Something went wrong.";
+        } catch (error) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Something went wrong.";
+
             setFormError(message);
             console.error(error);
         }

@@ -1,4 +1,4 @@
-import { BoardData, Collaborator, CollaboratorUser } from '@hooks/user/useBoard';
+import { BoardData, CollaboratorUser } from '@hooks/user/useBoard';
 
 export type BoardRole = 'OWNER' | 'EDITOR' | 'VIEWER';
 
